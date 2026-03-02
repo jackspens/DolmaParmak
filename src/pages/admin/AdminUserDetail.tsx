@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { UserProfile, LEVELS } from '../../types';
 import { tsToDate, formatNumber } from '../../utils/wpm';
 import { ArrowLeft, Medal, Zap, Target } from 'lucide-react';
@@ -16,19 +14,19 @@ export default function AdminUserDetail() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function loadUser() {
+        const loadUser = () => {
             if (!uid) return;
-            const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists()) setUser(snap.data() as UserProfile);
+            const users = JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
+            const found = users.find((u: UserProfile) => u.uid === uid);
+            if (found) setUser(found);
             setLoading(false);
-        }
+        };
         loadUser();
     }, [uid]);
 
     if (loading) return <div className="text-slate-400">Yükleniyor...</div>;
     if (!user) return <div className="text-red-400">Kullanıcı bulunamadı.</div>;
 
-    // Chart data: WPM progression across levels
     const chartData = LEVELS.map(l => ({
         name: l,
         wpm: user.levelStats?.[l]?.bestWPM || 0,

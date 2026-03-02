@@ -41,7 +41,6 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
                     recharts: ['recharts'],
                     router: ['react-router-dom'],
                 }

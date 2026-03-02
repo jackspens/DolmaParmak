@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { calculateAccuracy, calculateWPM, formatNumber, isLevelUnlocked } from '../utils/wpm';
 import { LEVEL_CONFIG, LEVELS } from '../types';
-import { Medal, Flame, Target, Zap, Clock, Trophy } from 'lucide-react';
+import { Medal, Flame, Target, Zap, Clock, Trophy, Keyboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -93,8 +93,8 @@ export default function Dashboard() {
                                 key={lvl}
                                 to={isUnlocked ? `/typing/${lvl}` : '#'}
                                 className={`glass p-5 relative overflow-hidden transition-all duration-300 ${isUnlocked
-                                        ? 'hover:border-neon-500/50 hover:bg-dark-800 cursor-pointer group'
-                                        : 'opacity-50 cursor-not-allowed grayscale'
+                                    ? 'hover:border-neon-500/50 hover:bg-dark-800 cursor-pointer group'
+                                    : 'opacity-50 cursor-not-allowed grayscale'
                                     }`}
                             >
                                 {!isUnlocked && (

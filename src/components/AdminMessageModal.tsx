@@ -1,30 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { AdminMessage } from '../types';
 import { BellRing, X } from 'lucide-react';
 
 export default function AdminMessageModal() {
-    const { userProfile } = useAuth();
+    const { userProfile, refreshProfile } = useAuth();
     const [messages, setMessages] = useState<AdminMessage[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
         if (!userProfile) return;
 
-        const fetchMessages = async () => {
+        const fetchMessages = () => {
             try {
-                const q = query(collection(db, 'adminMessages'), where('isActive', '==', true));
-                const snap = await getDocs(q);
-                const now = new Date();
+                const storedMsgs: AdminMessage[] = JSON.parse(localStorage.getItem('dolmaparmak_messages') || '[]');
+                const now = Date.now();
 
-                const activeMessages = snap.docs
-                    .map(d => ({ id: d.id, ...d.data() } as AdminMessage))
+                const activeMessages = storedMsgs
+                    .filter(msg => msg.isActive)
                     .filter(msg => {
                         // Check expiration
-                        const expires = msg.expiresAt?.toDate();
-                        if (expires && expires < now) return false;
+                        if (msg.expiresAt && (msg.expiresAt as any) < now) return false;
 
                         // Check if already read
                         if (userProfile.readMessages?.includes(msg.id)) return false;
@@ -49,9 +45,15 @@ export default function AdminMessageModal() {
 
     const handleMarkAsRead = async () => {
         try {
-            await updateDoc(doc(db, 'users', userProfile.uid), {
-                readMessages: arrayUnion(currentMsg.id)
-            });
+            const users = JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
+            const userIdx = users.findIndex((u: any) => u.uid === userProfile.uid);
+
+            if (userIdx !== -1) {
+                users[userIdx].readMessages = [...(users[userIdx].readMessages || []), currentMsg.id];
+                localStorage.setItem('dolmaparmak_users', JSON.stringify(users));
+                await refreshProfile();
+            }
+
             if (currentIndex < messages.length - 1) {
                 setCurrentIndex(prev => prev + 1);
             } else {

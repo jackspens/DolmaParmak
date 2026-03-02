@@ -88,7 +88,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
         {
             id: 'b2-2',
-            text: 'Osmanlı İmparatorluğu'nun yüzyıllarca süren siyasi ve kültürel mirası, bugünkü Türkiye Cumhuriyeti'nin şekillenmesinde belirleyici bir rol oynamıştır. Hukuk sisteminden mimari anlayışa, müzikten mutfak kültürüne uzanan geniş bir etki alanı mevcuttur.',
+            text: 'Osmanlı İmparatorluğu\'nun yüzyıllarca süren siyasi ve kültürel mirası, bugünkü Türkiye Cumhuriyeti\'nin şekillenmesinde belirleyici bir rol oynamıştır. Hukuk sisteminden mimari anlayışa, müzikten mutfak kültürüne uzanan geniş bir etki alanı mevcuttur.',
         },
         {
             id: 'b2-3',
@@ -115,8 +115,8 @@ const texts: Record<Level, TextEntry[]> = {
         },
         {
             id: 'c1-3',
-            text: 'Kuantum mekaniği, klasik fizik anlayışını temelinden sarsmış ve varlığa ilişkin önkabulleri yeniden sorgulatmıştır. Dalga-parçacık ikiliği, süperpozisyon ilkesi ve Heisenberg' in belirsizlik ilkesi, gözlem eyleminin gerçeklik üzerindeki dönüştürücü etkisini ortaya koymaktadır.',
-    },
+            text: 'Kuantum mekaniği, klasik fizik anlayışını temelinden sarsmış ve varlığa ilişkin önkabulleri yeniden sorgulatmıştır. Dalga-parçacık ikiliği, süperpozisyon ilkesi ve Heisenberg\'in belirsizlik ilkesi, gözlem eyleminin gerçeklik üzerindeki dönüştürücü etkisini ortaya koymaktadır.',
+        },
         {
             id: 'c1-4',
             text: 'Sosyolojik perspektiften bakıldığında, küreselleşme süreci beraberinde kültürel homojenleşme baskısı getirirken yerel kimliklerin direnişini de tetiklemiştir. Diaspora toplulukları, aidiyet ve kimlik taleplerini üst-ulusal bağlamlarda yeni kavramsal çerçevelerle ifade etmektedir.',
@@ -130,8 +130,8 @@ const texts: Record<Level, TextEntry[]> = {
     C2: [
         {
             id: 'c2-1',
-            text: 'Postmodern edebiyat kuramı, metnin anlamının yazarın niyet düzeyinde tüketilmediğini, aksine okuyucunun yorumsal müdahalesiyle her defasında yeniden inşa edildiğini ileri sürmektedir. Roland Barthes'ın "yazarın ölümü" tezi, özne merkezli anlamlandırma paradigmasını kökten sarsan bir epistemik kırılmayı simgelemektedir.',
-    },
+            text: 'Postmodern edebiyat kuramı, metnin anlamının yazarın niyet düzeyinde tüketilmediğini, aksine okuyucunun yorumsal müdahalesiyle her defasında yeniden inşa edildiğini ileri sürmektedir. Roland Barthes\'ın "yazarın ölümü" tezi, özne merkezli anlamlandırma paradigmasını kökten sarsan bir epistemik kırılmayı simgelemektedir.',
+        },
         {
             id: 'c2-2',
             text: 'Makroekonomik açıdan değerlendirildiğinde, para politikasının etkinliği doğrusal bir nedensellik zinciriyle sınırlı değildir; enflasyon beklentileri, reel faiz oranları ve döviz kuru dinamikleri karmaşık geribildirim döngüleri oluşturur. Merkez bankalarının iletişim stratejisi, piyasa algısını şekillendirmekte verimli piyasa hipotezinin öngördüğü mekanizmalar üzerinden belirleyici işlevler üstlenmektedir.',
@@ -146,8 +146,8 @@ const texts: Record<Level, TextEntry[]> = {
         },
         {
             id: 'c2-5',
-            text: 'Analitik felsefenin dil-anlam ilişkisine yönelik soruşturmaları, Wittgenstein'ın geç dönem düşüncesinde somutlaşan "anlam kullanımdır" tezinin bir uzantısı olarak değerlendirilebilir.Sözdizimsel yapıların anlambilimsel içeriklerle eşleştirilme biçimi, doğal dil işleme sistemleri için de temel bir modelleme güçlüğü teşkil etmekte; bu durum hesaplamalı dilbilim ile felsefi semantiğin kesişim noktasını giderek daha stratejik bir zemine taşımaktadır.',
-    },
+            text: 'Analitik felsefenin dil-anlam ilişkisine yönelik soruşturmaları, Wittgenstein\'ın geç dönem düşüncesinde somutlaşan "anlam kullanımdır" tezinin bir uzantısı olarak değerlendirilebilir.Sözdizimsel yapıların anlambilimsel içeriklerle eşleştirilme biçimi, doğal dil işleme sistemleri için de temel bir modelleme güçlüğü teşkil etmekte; bu durum hesaplamalı dilbilim ile felsefi semantiğin kesişim noktasını giderek daha stratejik bir zemine taşımaktadır.',
+        },
     ],
 };
 
