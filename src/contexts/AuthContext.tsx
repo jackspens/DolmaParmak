@@ -42,7 +42,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchProfile = async (uid: string, email?: string | null) => {
         const ref = doc(db, 'users', uid);
-        const snap = await getDoc(ref);
+        let snap;
+        try {
+            snap = await getDoc(ref);
+        } catch (err) {
+            console.error("Firestore getDoc error:", err);
+            // If it fails, simulate it not existing so we create the local profile
+            snap = { exists: () => false, data: () => undefined } as any;
+        }
+
         if (snap.exists()) {
             setUserProfile(snap.data() as UserProfile);
         } else if (email) {
@@ -62,8 +70,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 readMessages: [],
                 levelStats: defaultLevelStats(),
             };
-            await setDoc(ref, { uid, ...profile }).catch(() => { });
-            setUserProfile({ uid, ...profile } as UserProfile);
+            setUserProfile({ uid, ...profile } as UserProfile); // Set state immediately
+            try {
+                await setDoc(ref, { uid, ...profile });
+            } catch (err) {
+                console.error("Firestore setDoc error:", err);
+            }
         }
     };
 
