@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if requesting user is an admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Is the user authenticated?
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      // Users can read/write their own data; Admins can read/write all users
+      allow read: if isAuthed() && (request.auth.uid == userId || isAdmin());
+      // Only users can write to their own doc, admins can fully override
+      allow write: if isAuthed() && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /adminMessages/{messageId} {
+      // Any authenticated user can read active messages, Admins can read all & write
+      allow read: if isAuthed();
+      allow write: if isAuthed() && isAdmin();
+    }
+  }
+}
