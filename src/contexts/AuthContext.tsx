@@ -40,11 +40,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchProfile = async (uid: string) => {
+    const fetchProfile = async (uid: string, email?: string | null) => {
         const ref = doc(db, 'users', uid);
         const snap = await getDoc(ref);
         if (snap.exists()) {
             setUserProfile(snap.data() as UserProfile);
+        } else if (email) {
+            // Auto-create missing profile if it doesn't exist
+            const profile: Omit<UserProfile, 'uid'> = {
+                email,
+                role: 'user',
+                currentLevel: 'A1',
+                bestWPM: 0,
+                bestAccuracy: 0,
+                totalXP: 0,
+                streakDays: 0,
+                badges: [],
+                createdAt: serverTimestamp() as any,
+                lastLogin: serverTimestamp() as any,
+                isOnline: true,
+                readMessages: [],
+                levelStats: defaultLevelStats(),
+            };
+            await setDoc(ref, { uid, ...profile }).catch(() => { });
+            setUserProfile({ uid, ...profile } as UserProfile);
         }
     };
 
@@ -52,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const unsub = onAuthStateChanged(auth, async (user) => {
             setFirebaseUser(user);
             if (user) {
-                await fetchProfile(user.uid);
+                await fetchProfile(user.uid, user.email);
                 // Update lastLogin + isOnline
                 await updateDoc(doc(db, 'users', user.uid), {
                     lastLogin: serverTimestamp(),
@@ -100,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const refreshProfile = async () => {
-        if (firebaseUser) await fetchProfile(firebaseUser.uid);
+        if (firebaseUser) await fetchProfile(firebaseUser.uid, firebaseUser.email);
     };
 
     return (
