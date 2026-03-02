@@ -1,3 +1,5 @@
+import { LEVEL_CONFIG, LEVELS, Level, LevelStat } from '../types';
+
 // WPM formula: (correctCharacters / 5) / (elapsedSeconds / 60)
 export function calculateWPM(correctChars: number, elapsedSeconds: number): number {
     if (elapsedSeconds === 0) return 0;
@@ -31,15 +33,14 @@ export function calculateXP(
 
 // Check if a level is unlocked based on previous level's best WPM
 export function isLevelUnlocked(
-    level: import('../types').Level,
-    levelStats: Record<import('../types').Level, import('../types').LevelStat>
+    level: Level,
+    levelStats: Record<Level, LevelStat>
 ): boolean {
-    const { LEVEL_CONFIG, LEVELS } = require('../types');
     const idx = LEVELS.indexOf(level);
     if (idx === 0) return true;   // A1 always unlocked
-    const prev = LEVELS[idx - 1] as import('../types').Level;
+    const prev = LEVELS[idx - 1] as Level;
     const prevStat = levelStats[prev];
-    return prevStat.bestAccuracy >= 80;
+    return prevStat?.bestAccuracy >= 80;
 }
 
 // Format big numbers: 1500 → 1.5K
