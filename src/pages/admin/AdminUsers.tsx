@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { UserProfile, LEVELS } from '../../types';
 import { tsToDate, formatNumber } from '../../utils/wpm';
 import { Search, Eye, ShieldAlert, ShieldCheck, Ban } from 'lucide-react';
@@ -14,29 +16,24 @@ export default function AdminUsers() {
         fetchUsers();
     }, []);
 
-    const fetchUsers = () => {
-        const storedUsers = JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
-        setUsers(storedUsers);
+    async function fetchUsers() {
+        const snap = await getDocs(collection(db, 'users'));
+        setUsers(snap.docs.map(d => d.data() as UserProfile));
         setLoading(false);
-    };
+    }
 
-    const saveUsers = (newUsers: UserProfile[]) => {
-        localStorage.setItem('dolmaparmak_users', JSON.stringify(newUsers));
-        setUsers(newUsers);
-    };
-
-    const handleRoleToggle = (uid: string, currentRole: string) => {
+    const handleRoleToggle = async (uid: string, currentRole: string) => {
         const newRole = currentRole === 'admin' ? 'user' : 'admin';
         if (confirm(`Kullanıcı rolü ${newRole} olarak değiştirilsin mi?`)) {
-            const newUsers = users.map(u => u.uid === uid ? { ...u, role: newRole as any } : u);
-            saveUsers(newUsers);
+            await updateDoc(doc(db, 'users', uid), { role: newRole });
+            setUsers(users.map(u => u.uid === uid ? { ...u, role: newRole as any } : u));
         }
     };
 
-    const handleDisableToggle = (uid: string, isDisabled: boolean) => {
+    const handleDisableToggle = async (uid: string, isDisabled: boolean) => {
         if (confirm(isDisabled ? 'Kullanıcı hesabı aktif edilsin mi?' : 'Kullanıcı hesabı dondurulsun mu?')) {
-            const newUsers = users.map(u => u.uid === uid ? { ...u, isDisabled: !isDisabled } : u);
-            saveUsers(newUsers);
+            await updateDoc(doc(db, 'users', uid), { isDisabled: !isDisabled });
+            setUsers(users.map(u => u.uid === uid ? { ...u, isDisabled: !isDisabled } : u));
         }
     };
 
@@ -44,7 +41,7 @@ export default function AdminUsers() {
         const matchSearch = u.email.toLowerCase().includes(search.toLowerCase());
         const matchLevel = levelFilter === 'ALL' || u.currentLevel === levelFilter;
         return matchSearch && matchLevel;
-    }).sort((a, b) => b.totalXP - a.totalXP);
+    }).sort((a, b) => b.totalXP - a.totalXP); // Sort by XP desc
 
     return (
         <div className="space-y-6">

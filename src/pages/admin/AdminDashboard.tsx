@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import { UserProfile, LEVELS } from '../../types';
 import { Users, TrendingUp, Target, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -8,26 +10,29 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadStats = () => {
-            const storedUsers = JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
-            setUsers(storedUsers);
+        async function loadStats() {
+            const snap = await getDocs(collection(db, 'users'));
+            setUsers(snap.docs.map(d => d.data() as UserProfile));
             setLoading(false);
-        };
+        }
         loadStats();
     }, []);
 
     if (loading) return <div className="text-slate-400">Yükleniyor...</div>;
 
+    // Stats calc
     const totalUsers = users.length;
     const activeToday = users.filter(u => {
         if (!u.lastLogin) return false;
-        const date = new Date(u.lastLogin as any);
-        return new Date().toDateString() === date.toDateString();
+        const ll = u.lastLogin as any;
+        const d = ll.toDate ? ll.toDate() : new Date(ll.seconds * 1000);
+        return new Date().toDateString() === d.toDateString();
     }).length;
 
     const avgWPM = Math.round(users.reduce((acc, u) => acc + (u.bestWPM || 0), 0) / (totalUsers || 1));
     const avgAcc = Math.round(users.reduce((acc, u) => acc + (u.bestAccuracy || 0), 0) / (totalUsers || 1));
 
+    // Chart data
     const levelCounts: Record<string, number> = {};
     LEVELS.forEach(l => levelCounts[l] = 0);
     users.forEach(u => { levelCounts[u.currentLevel] = (levelCounts[u.currentLevel] || 0) + 1; });

@@ -1,8 +1,29 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { UserProfile, LevelStat, LEVELS, AdminMessage } from '../types';
+import {
+    User,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut as firebaseSignOut,
+    onAuthStateChanged,
+} from 'firebase/auth';
+import {
+    doc, getDoc, setDoc, updateDoc, serverTimestamp
+} from 'firebase/firestore';
+import { auth, db } from '../firebase';
+import { UserProfile, Level, LevelStat, LEVELS } from '../types';
 
+// ─── Default level stats ──────────────────────────────────────────────────────
+function defaultLevelStats(): Record<Level, LevelStat> {
+    const obj = {} as Record<Level, LevelStat>;
+    LEVELS.forEach(lvl => {
+        obj[lvl] = { bestWPM: 0, bestAccuracy: 0, completions: 0 };
+    });
+    return obj;
+}
+
+// ─── Context type ─────────────────────────────────────────────────────────────
 interface AuthContextType {
-    firebaseUser: { uid: string; email: string } | null; // Mocked
+    firebaseUser: User | null;
     userProfile: UserProfile | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<void>;
@@ -13,112 +34,69 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function defaultLevelStats(): Record<string, LevelStat> {
-    const obj = {} as Record<string, LevelStat>;
-    LEVELS.forEach(lvl => {
-        obj[lvl] = { bestWPM: 0, bestAccuracy: 0, completions: 0 };
-    });
-    return obj;
-}
-
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [firebaseUser, setFirebaseUser] = useState<{ uid: string; email: string } | null>(null);
+    const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Helper to read/write all users
-    const getUsers = (): UserProfile[] => JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
-    const saveUsers = (users: UserProfile[]) => localStorage.setItem('dolmaparmak_users', JSON.stringify(users));
-
     const fetchProfile = async (uid: string) => {
-        const users = getUsers();
-        const user = users.find(u => u.uid === uid);
-        if (user) {
-            setUserProfile(user);
+        const ref = doc(db, 'users', uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+            setUserProfile(snap.data() as UserProfile);
         }
     };
 
     useEffect(() => {
-        // Check if previously logged in
-        const activeUid = localStorage.getItem('dolmaparmak_active_uid');
-        if (activeUid) {
-            const users = getUsers();
-            const user = users.find(u => u.uid === activeUid);
+        const unsub = onAuthStateChanged(auth, async (user) => {
+            setFirebaseUser(user);
             if (user) {
-                setFirebaseUser({ uid: user.uid, email: user.email });
-
-                // Update last login
-                user.lastLogin = Date.now() as any;
-                user.isOnline = true;
-                saveUsers(users);
-                setUserProfile(user);
+                await fetchProfile(user.uid);
+                // Update lastLogin + isOnline
+                await updateDoc(doc(db, 'users', user.uid), {
+                    lastLogin: serverTimestamp(),
+                    isOnline: true,
+                }).catch(() => { });
+            } else {
+                setUserProfile(null);
             }
-        }
-        setLoading(false);
+            setLoading(false);
+        });
+        return unsub;
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        // Note: LocalStorage-based auth is NOT secure and does not check passwords properly in this demo version.
-        const users = getUsers();
-        const user = users.find(u => u.email === email);
-        if (!user) {
-            throw { code: 'auth/invalid-credential', message: 'User not found' };
-        }
-
-        user.lastLogin = Date.now() as any;
-        user.isOnline = true;
-        saveUsers(users);
-
-        setFirebaseUser({ uid: user.uid, email: user.email });
-        setUserProfile(user);
-        localStorage.setItem('dolmaparmak_active_uid', user.uid);
+        await signInWithEmailAndPassword(auth, email, password);
     };
 
     const signUp = async (email: string, password: string) => {
-        const users = getUsers();
-        if (users.some(u => u.email === email)) {
-            throw { code: 'auth/email-already-in-use', message: 'Email in use' };
-        }
-
-        const uid = 'local_' + Date.now().toString();
-
-        const newProfile: UserProfile = {
-            uid,
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Create Firestore profile
+        const profile: Omit<UserProfile, 'uid'> = {
             email,
-            role: email.includes('admin') ? 'admin' : 'user', // Auto-admin if email contains 'admin' for local testing
+            role: 'user',
             currentLevel: 'A1',
             bestWPM: 0,
             bestAccuracy: 0,
             totalXP: 0,
             streakDays: 0,
             badges: [],
-            createdAt: Date.now() as any,
-            lastLogin: Date.now() as any,
+            createdAt: serverTimestamp() as any,
+            lastLogin: serverTimestamp() as any,
             isOnline: true,
             readMessages: [],
-            levelStats: defaultLevelStats() as any,
+            levelStats: defaultLevelStats(),
         };
-
-        users.push(newProfile);
-        saveUsers(users);
-
-        setFirebaseUser({ uid, email });
-        setUserProfile(newProfile);
-        localStorage.setItem('dolmaparmak_active_uid', uid);
+        await setDoc(doc(db, 'users', cred.user.uid), { uid: cred.user.uid, ...profile });
     };
 
     const signOut = async () => {
         if (firebaseUser) {
-            const users = getUsers();
-            const userIdx = users.findIndex(u => u.uid === firebaseUser.uid);
-            if (userIdx !== -1) {
-                users[userIdx].isOnline = false;
-                saveUsers(users);
-            }
+            await updateDoc(doc(db, 'users', firebaseUser.uid), { isOnline: false }).catch(() => { });
         }
-        setFirebaseUser(null);
+        await firebaseSignOut(auth);
         setUserProfile(null);
-        localStorage.removeItem('dolmaparmak_active_uid');
     };
 
     const refreshProfile = async () => {
@@ -132,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useAuth() {
     const ctx = useContext(AuthContext);
     if (!ctx) throw new Error('useAuth must be used within AuthProvider');

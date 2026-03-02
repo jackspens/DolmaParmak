@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { collection, query, orderBy, getDocs, addDoc, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { AdminMessage } from '../../types';
 import { MessageSquareHeart, Plus, Power, ShieldAlert } from 'lucide-react';
 import { tsToDate } from '../../utils/wpm';
@@ -14,44 +16,47 @@ export default function AdminMessages() {
     const [targetType, setTargetType] = useState<'all' | 'single'>('all');
     const [targetUser, setTargetUser] = useState('');
     const [expireDays, setExpireDays] = useState(7);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchMessages();
     }, []);
 
-    const fetchMessages = () => {
-        const stored = JSON.parse(localStorage.getItem('dolmaparmak_messages') || '[]');
+    async function fetchMessages() {
+        // Basic query, no indexing required yet
+        const snap = await getDocs(collection(db, 'adminMessages'));
+        const arr = snap.docs.map(d => ({ id: d.id, ...d.data() } as AdminMessage));
         // Sort client-side by createdAt desc
-        stored.sort((a: any, b: any) => b.createdAt - a.createdAt);
-        setMessages(stored);
+        arr.sort((a, b) => {
+            const aTime = (a.createdAt as any)?.seconds || 0;
+            const bTime = (b.createdAt as any)?.seconds || 0;
+            return bTime - aTime;
+        });
+        setMessages(arr);
         setLoading(false);
-    };
+    }
 
-    const saveMessages = (msgs: AdminMessage[]) => {
-        localStorage.setItem('dolmaparmak_messages', JSON.stringify(msgs));
-        setMessages(msgs);
-    };
-
-    const handleCreate = (e: React.FormEvent) => {
+    const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !body) return;
-
+        setSaving(true);
         try {
-            const now = Date.now();
-            const expireDate = now + (expireDays * 24 * 60 * 60 * 1000);
+            const expireDate = new Date();
+            expireDate.setDate(expireDate.getDate() + expireDays);
 
-            const newMsg: AdminMessage = {
-                id: 'msg_' + now.toString(),
+            const msgData = {
                 title,
                 message: body,
                 targetType,
-                targetUserId: targetType === 'single' ? targetUser : undefined,
+                targetUserId: targetType === 'single' ? targetUser : null,
                 isActive: true,
-                createdAt: now as any,
-                expiresAt: expireDate as any,
+                createdAt: serverTimestamp(),
+                expiresAt: expireDate,
             };
 
-            saveMessages([newMsg, ...messages]);
+            const docRef = await addDoc(collection(db, 'adminMessages'), msgData);
+            const newMsg = { id: docRef.id, ...msgData } as unknown as AdminMessage;
+            setMessages([newMsg, ...messages]);
 
             // Reset
             setTitle('');
@@ -61,12 +66,14 @@ export default function AdminMessages() {
         } catch (err) {
             console.error(err);
             alert('Mesaj oluşturulamadı.');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const toggleActive = (id: string, current: boolean) => {
-        const newMsgs = messages.map(m => m.id === id ? { ...m, isActive: !current } : m);
-        saveMessages(newMsgs);
+    const toggleActive = async (id: string, current: boolean) => {
+        await updateDoc(doc(db, 'adminMessages', id), { isActive: !current });
+        setMessages(messages.map(m => m.id === id ? { ...m, isActive: !current } : m));
     };
 
     return (
@@ -109,8 +116,8 @@ export default function AdminMessages() {
                             </div>
                         )}
                         <div className="md:col-span-2 flex justify-end">
-                            <button type="submit" className="btn-primary w-full md:w-auto">
-                                Yayınla ve Gönder
+                            <button type="submit" disabled={saving} className="btn-primary w-full md:w-auto">
+                                {saving ? 'Kaydediliyor...' : 'Yayınla ve Gönder'}
                             </button>
                         </div>
                     </div>

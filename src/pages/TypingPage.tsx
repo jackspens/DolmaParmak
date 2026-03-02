@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase';
+import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { Level, LEVEL_CONFIG, LEVELS, BADGE_DEFINITIONS } from '../types';
 import { isLevelUnlocked, calculateXP } from '../utils/wpm';
 import { getRandomText } from '../data/texts';
@@ -38,23 +40,28 @@ export default function TypingPage() {
             const stats = { ...userProfile.levelStats };
             const currentStats = stats[currentLevel] || { bestWPM: 0, bestAccuracy: 0, completions: 0 };
 
+            // Update bests
             if (wpm > currentStats.bestWPM) currentStats.bestWPM = wpm;
             if (acc > currentStats.bestAccuracy) currentStats.bestAccuracy = acc;
             currentStats.completions += 1;
             stats[currentLevel] = currentStats;
 
+            // Global bests
             const globalBestWPM = Math.max(userProfile.bestWPM, wpm);
             const globalBestAcc = Math.max(userProfile.bestAccuracy, acc);
 
+            // Calc XP
             const earnedXP = calculateXP(config.xpReward, wpm, acc, config.minWPM);
             const newTotalXP = userProfile.totalXP + earnedXP;
 
+            // Handle unlocking next level if accuracy >= 80%
             let newLevel = userProfile.currentLevel;
             let leveledUp = false;
             if (acc >= 80) {
                 const idx = LEVELS.indexOf(currentLevel);
                 if (idx < LEVELS.length - 1) {
                     const nextLevel = LEVELS[idx + 1];
+                    // If the profile's current global level is less than the newly unlocked one, upgrade them
                     if (LEVELS.indexOf(userProfile.currentLevel) < LEVELS.indexOf(nextLevel)) {
                         newLevel = nextLevel;
                         leveledUp = true;
@@ -62,13 +69,13 @@ export default function TypingPage() {
                 }
             }
 
-            const newBadges = [...(userProfile.badges || [])];
-            const earnedIds = newBadges.map(b => b.id);
-
+            // Handle Badges
+            const newBadges: any[] = [];
+            const earnedIds = userProfile.badges.map(b => b.id);
             const checkBadge = (id: string, condition: boolean) => {
                 if (condition && !earnedIds.includes(id)) {
                     const bd = BADGE_DEFINITIONS.find(b => b.id === id);
-                    if (bd) newBadges.push({ id, name: bd.name, icon: bd.icon, earnedAt: Date.now() as any });
+                    if (bd) newBadges.push({ id, name: bd.name, icon: bd.icon, earnedAt: serverTimestamp() });
                 }
             };
 
@@ -79,27 +86,25 @@ export default function TypingPage() {
             checkBadge('accuracy_100', acc === 100);
             checkBadge('level_c2', newLevel === 'C2');
 
-            // LocalStorage Update
-            const users = JSON.parse(localStorage.getItem('dolmaparmak_users') || '[]');
-            const userIdx = users.findIndex((u: any) => u.uid === userProfile.uid);
+            const updates: any = {
+                levelStats: stats,
+                bestWPM: globalBestWPM,
+                bestAccuracy: globalBestAcc,
+                totalXP: newTotalXP,
+                currentLevel: newLevel
+            };
 
-            if (userIdx !== -1) {
-                users[userIdx] = {
-                    ...users[userIdx],
-                    levelStats: stats,
-                    bestWPM: globalBestWPM,
-                    bestAccuracy: globalBestAcc,
-                    totalXP: newTotalXP,
-                    currentLevel: newLevel,
-                    badges: newBadges
-                };
-                localStorage.setItem('dolmaparmak_users', JSON.stringify(users));
-                await refreshProfile();
+            if (newBadges.length > 0) {
+                updates.badges = arrayUnion(...newBadges);
             }
+
+            await updateDoc(doc(db, 'users', userProfile.uid), updates);
+            await refreshProfile();
 
             if (leveledUp) {
                 setShowLevelUp(true);
             } else {
+                // Load next text immediately if no level up modal
                 setTextEntry(getRandomText(currentLevel));
             }
 
@@ -112,6 +117,7 @@ export default function TypingPage() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
+            {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <button onClick={() => navigate('/dashboard')} className="btn-secondary flex items-center gap-2">
                     <ArrowLeft size={18} /> Panel
@@ -147,7 +153,7 @@ export default function TypingPage() {
                 <div className="flex-1 flex items-center justify-center p-4">
                     <div className={`w-full transition-opacity duration-300 ${sessionLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         <TypingEngine
-                            key={textEntry.id}
+                            key={textEntry.id}  // Force remount on text change to clean state
                             text={textEntry.text}
                             onComplete={handleComplete}
                         />
