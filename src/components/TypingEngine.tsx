@@ -89,16 +89,26 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
         const stop = Date.now();
         setEndTime(stop);
 
+        const finalFingerStats: Partial<FingerAccuracy> = {};
         let correctChars = 0;
         for (let i = 0; i < finalInput.length; i++) {
-            if (finalInput[i] === text[i]) correctChars++;
+            const isMatch = finalInput[i] === text[i];
+            if (isMatch) correctChars++;
+
+            // Map each character hit (correct or not) TO the finger meant for the TARGET char
+            const targetChar = text[i];
+            if (targetChar) {
+                const expectedFinger = KEY_FINGER_MAP[targetChar.toLowerCase()] || 'thumbs';
+                const hits = finalFingerStats[expectedFinger] || 0;
+                finalFingerStats[expectedFinger] = isMatch ? hits + 1 : hits;
+            }
         }
 
         const duration = (stop - (startTime || stop)) / 1000;
         const wpm = calculateWPM(correctChars, duration);
         const accuracy = calculateAccuracy(correctChars, finalInput.length);
 
-        onComplete(wpm, accuracy, duration, correctChars, finalInput.length, fingerStats);
+        onComplete(wpm, accuracy, duration, correctChars, finalInput.length, finalFingerStats);
     };
 
     const handleRestart = () => {
