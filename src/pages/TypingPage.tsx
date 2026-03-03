@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { BADGE_DEFINITIONS, FingerAccuracy } from '../types';
 import { calculateXP } from '../utils/wpm';
-import { getLessonById, getNextLesson, Lesson } from '../data/curriculum';
+import { getLessonById, getNextLesson, getAllLessonIds } from '../data/curriculum';
 import TypingEngine from '../components/TypingEngine';
 import { Keyboard, ArrowLeft, AlertCircle } from 'lucide-react';
-import clsx from 'clsx';
 
 export default function TypingPage() {
     const { level: paramLessonId } = useParams<{ level: string }>(); // Now used as lessonId
@@ -35,21 +34,25 @@ export default function TypingPage() {
 
     if (!userProfile) return null;
 
-    // Strict progression check: If they are trying to access a lesson they haven't unlocked yet
-    const canAccess =
-        lessonId === 'phase1-f-1' || // Always allow first lesson
-        (currentLesson && currentLesson.isUnlockedByDefault) ||
-        (lessonId === userProfile.currentLessonId) ||
-        (userProfile.completedLessons.includes(lessonId));
+    if (!currentLesson) {
+        console.warn('Lesson not found:', lessonId, '-> redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
+        return null;
+    }
 
-    if (!canAccess || !currentLesson) {
-        console.warn('Redirecting to dashboard: Access denied for lesson', lessonId, {
-            found: !!currentLesson,
-            unlockedDefault: currentLesson?.isUnlockedByDefault,
-            current: userProfile.currentLessonId,
-            completed: userProfile.completedLessons.includes(lessonId)
-        });
-        return <Navigate to="/dashboard" replace />;
+    // Access control: always allow first lesson, current lesson, already-completed lessons,
+    // or any lesson unlocked by default. This deliberately allows re-doing past lessons.
+    const allCompleted = userProfile.completedLessons || [];
+    const canAccess =
+        lessonId === 'phase1-f-1' ||
+        currentLesson.isUnlockedByDefault ||
+        lessonId === userProfile.currentLessonId ||
+        allCompleted.includes(lessonId);
+
+    if (!canAccess) {
+        console.warn('Access denied for lesson', lessonId, { current: userProfile.currentLessonId, completed: allCompleted.length });
+        navigate('/dashboard', { replace: true });
+        return null;
     }
 
 
@@ -109,6 +112,10 @@ export default function TypingPage() {
             checkBadge('first_session', true);
             checkBadge('accuracy_100', acc === 100);
 
+            const allLessonIds = getAllLessonIds();
+            const currentIdx = allLessonIds.indexOf(currentLesson.id);
+            const userCurrentIdx = allLessonIds.indexOf(userProfile.currentLessonId);
+
             const updates: any = {
                 bestWPM: globalBestWPM,
                 bestAccuracy: Math.max(userProfile.bestAccuracy || 0, acc),
@@ -117,9 +124,12 @@ export default function TypingPage() {
                 completedLessons: arrayUnion(currentLesson.id)
             };
 
-            // Unlock next lesson
-            if (nextLesson && userProfile.currentLessonId === currentLesson.id) {
+            // Always advance currentLessonId to the next lesson if finishing current or an earlier lesson
+            if (nextLesson && currentIdx >= userCurrentIdx) {
                 updates.currentLessonId = nextLesson.id;
+                console.info('Advancing currentLessonId to:', nextLesson.id);
+            } else {
+                console.info('Not advancing currentLessonId (retrying old lesson). Staying at:', userProfile.currentLessonId);
             }
 
             if (newBadges.length > 0) {
@@ -130,6 +140,7 @@ export default function TypingPage() {
             await updateDoc(doc(db, 'users', userProfile.uid), updates);
             await refreshProfile();
 
+            // Navigate to next lesson immediately instead of waiting for state
             setShowLevelUp(true);
 
         } catch (err) {
@@ -154,7 +165,7 @@ export default function TypingPage() {
                     >
                         <AlertCircle size={16} /> Parmak Yerleşimi
                     </button>
-                    <div className={clsx(`px-4 py-1.5 rounded-full border-2 text-sm font-bold flex items-center gap-2 border-neon-500 text-neon-400 bg-neon-500/10`)}>
+                    <div className={`px-4 py-1.5 rounded-full border-2 text-sm font-bold flex items-center gap-2 border-neon-500 text-neon-400 bg-neon-500/10`}>
                         <Keyboard size={16} /> {currentLesson.title}
                     </div>
                 </div>

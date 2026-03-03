@@ -144,3 +144,28 @@ export function getNextLesson(currentLessonId: string): Lesson | null {
     }
     return null;
 }
+
+export function getPreviousLesson(currentLessonId: string): Lesson | null {
+    let lastLesson: Lesson | null = null;
+    for (const phase of CURRICULUM) {
+        for (const letterGroup of phase.letters) {
+            for (const lesson of letterGroup.lessons) {
+                if (lesson.id === currentLessonId) return lastLesson;
+                lastLesson = lesson;
+            }
+        }
+    }
+    return null;
+}
+
+export function getAllLessonIds(): string[] {
+    const ids: string[] = [];
+    for (const phase of CURRICULUM) {
+        for (const letterGroup of phase.letters) {
+            for (const lesson of letterGroup.lessons) {
+                ids.push(lesson.id);
+            }
+        }
+    }
+    return ids;
+}

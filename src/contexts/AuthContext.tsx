@@ -65,18 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Merge existing data with defaults in case of missing fields (e.g. manually created users)
             const fullProfile: UserProfile = {
                 uid, // Crucial: was missing for existing users
-                completedLessons: [],
-                fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
-                bestWPM: 0,
-                bestAccuracy: 0,
-                totalXP: 0,
-                streakDays: 0,
-                badges: [],
                 readMessages: [],
                 levelStats: defaultLevelStats(),
+                role: 'user',
                 ...(data as any),
                 currentLevel: validLevel, // Ensure valid level for curriculum
-                currentLessonId: lessonId // Ensure valid lesson for curriculum
+                currentLessonId: lessonId, // Ensure valid lesson for curriculum
+                completedLessons: (data.completedLessons || []) as string[] // Force array
             };
             setUserProfile(fullProfile);
         } else if (email) {
