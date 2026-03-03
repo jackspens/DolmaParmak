@@ -16,7 +16,8 @@ export default function TypingPage() {
     const navigate = useNavigate();
 
     const lessonId = paramLessonId || userProfile?.currentLessonId || 'phase1-f-1';
-    const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+    const currentLesson = getLessonById(lessonId);
+
     const [sessionLoading, setSessionLoading] = useState(false);
 
     // Result states
@@ -25,8 +26,7 @@ export default function TypingPage() {
     const [lastResults, setLastResults] = useState<{ wpm: number, acc: number, fingerAcc: number } | null>(null);
 
     useEffect(() => {
-        const lesson = getLessonById(lessonId);
-        setCurrentLesson(lesson);
+        console.log('TypingPage Loaded:', { lessonId, currentLesson, userLevel: userProfile?.currentLevel });
         setShowLevelUp(false);
         setShowFailed(false);
     }, [lessonId]);
@@ -34,13 +34,22 @@ export default function TypingPage() {
     if (!userProfile) return null;
 
     // Strict progression check: If they are trying to access a lesson they haven't unlocked yet
-    if (currentLesson && !currentLesson.isUnlockedByDefault && lessonId !== userProfile.currentLessonId && !userProfile.completedLessons.includes(lessonId)) {
+    const canAccess =
+        lessonId === 'phase1-f-1' || // Always allow first lesson
+        (currentLesson && currentLesson.isUnlockedByDefault) ||
+        (lessonId === userProfile.currentLessonId) ||
+        (userProfile.completedLessons.includes(lessonId));
+
+    if (!canAccess || !currentLesson) {
+        console.warn('Redirecting to dashboard: Access denied for lesson', lessonId, {
+            found: !!currentLesson,
+            unlockedDefault: currentLesson?.isUnlockedByDefault,
+            current: userProfile.currentLessonId,
+            completed: userProfile.completedLessons.includes(lessonId)
+        });
         return <Navigate to="/dashboard" replace />;
     }
 
-    if (!currentLesson) {
-        return <Navigate to="/dashboard" replace />;
-    }
 
     const handleComplete = async (wpm: number, acc: number, duration: number, correctChars: number, totalChars: number, sessionFingerStats: Partial<FingerAccuracy>) => {
         setSessionLoading(true);

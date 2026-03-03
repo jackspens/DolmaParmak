@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UserProfile, Level, LevelStat, LEVELS } from '../types';
+import { getLessonById } from '../data/curriculum';
 
 // ─── Default level stats ──────────────────────────────────────────────────────
 function defaultLevelStats(): Record<Level, LevelStat> {
@@ -57,9 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const rawLevel = data.currentLevel;
             const validLevel = LEVELS.includes(rawLevel as Level) ? (rawLevel as Level) : 'Phase 1';
 
+            // Validate lessonId or fallback
+            let lessonId = data.currentLessonId || 'phase1-f-1';
+            if (!getLessonById(lessonId)) lessonId = 'phase1-f-1';
+
             // Merge existing data with defaults in case of missing fields (e.g. manually created users)
             const fullProfile: UserProfile = {
-                currentLessonId: 'phase1-f-1',
                 completedLessons: [],
                 fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
                 bestWPM: 0,
@@ -70,7 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 readMessages: [],
                 levelStats: defaultLevelStats(),
                 ...(data as any),
-                currentLevel: validLevel // Ensure valid level for curriculum
+                currentLevel: validLevel, // Ensure valid level for curriculum
+                currentLessonId: lessonId // Ensure valid lesson for curriculum
             };
             setUserProfile(fullProfile);
         } else if (email) {
