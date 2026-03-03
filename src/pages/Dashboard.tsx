@@ -18,7 +18,7 @@ export default function Dashboard() {
     const { userProfile } = useAuth();
     if (!userProfile) return null;
 
-    const currentLvlConfig = LEVEL_CONFIG[userProfile.currentLevel];
+    const currentLvlConfig = LEVEL_CONFIG[userProfile.currentLevel] || LEVEL_CONFIG['Phase 1'];
     const nextLvlConfig = LEVELS.indexOf(userProfile.currentLevel) < LEVELS.length - 1
         ? LEVEL_CONFIG[LEVELS[LEVELS.indexOf(userProfile.currentLevel) + 1]]
         : null;
