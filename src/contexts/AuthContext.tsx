@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
     User,
     createUserWithEmailAndPassword,
@@ -35,7 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
     const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -52,10 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (snap.exists()) {
-            const data = snap.data();
+            const data = snap.data() || {};
+            // Validate level or fallback to Phase 1
+            const rawLevel = data.currentLevel;
+            const validLevel = LEVELS.includes(rawLevel as Level) ? (rawLevel as Level) : 'Phase 1';
+
             // Merge existing data with defaults in case of missing fields (e.g. manually created users)
             const fullProfile: UserProfile = {
-                currentLevel: 'Phase 1',
                 currentLessonId: 'phase1-f-1',
                 completedLessons: [],
                 fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
@@ -66,10 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 badges: [],
                 readMessages: [],
                 levelStats: defaultLevelStats(),
-                ...(data as any)
+                ...(data as any),
+                currentLevel: validLevel // Ensure valid level for curriculum
             };
             setUserProfile(fullProfile);
         } else if (email) {
+
             // Auto-create missing profile if it doesn't exist
             const profile: Omit<UserProfile, 'uid'> = {
                 email,
