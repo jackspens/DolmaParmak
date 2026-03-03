@@ -11,7 +11,7 @@ import { Keyboard, ArrowLeft, AlertCircle } from 'lucide-react';
 
 export default function TypingPage() {
     const { level: paramLessonId } = useParams<{ level: string }>(); // Now used as lessonId
-    const { userProfile, refreshProfile } = useAuth();
+    const { userProfile, updateProfile } = useAuth();
     const navigate = useNavigate();
 
     const lessonId = paramLessonId || userProfile?.currentLessonId || 'phase1-f-1';
@@ -138,9 +138,18 @@ export default function TypingPage() {
 
             console.info('Updating Firestore with:', updates);
             await updateDoc(doc(db, 'users', userProfile.uid), updates);
-            await refreshProfile();
 
-            // Navigate to next lesson immediately instead of waiting for state
+            // Optimistically update local state IMMEDIATELY — no Firestore round-trip
+            // This ensures canAccess on the next lesson page passes right away
+            updateProfile({
+                totalXP: newTotalXP,
+                bestWPM: globalBestWPM,
+                bestAccuracy: Math.max(userProfile.bestAccuracy || 0, acc),
+                fingerAccuracy: newFingerAcc as any,
+                currentLessonId: updates.currentLessonId || userProfile.currentLessonId,
+                completedLessons: [...(userProfile.completedLessons || []), currentLesson.id],
+            });
+
             setShowLevelUp(true);
 
         } catch (err) {

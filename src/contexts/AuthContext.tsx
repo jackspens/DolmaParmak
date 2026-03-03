@@ -31,6 +31,7 @@ interface AuthContextType {
     signUp: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
+    updateProfile: (updates: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -162,8 +163,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) await fetchProfile(firebaseUser.uid, firebaseUser.email);
     };
 
+    // Optimistically patch local state without a Firestore round-trip
+    const updateProfile = (updates: Partial<UserProfile>) => {
+        setUserProfile(prev => prev ? {
+            ...prev, ...updates,
+            completedLessons: updates.completedLessons ?? prev.completedLessons
+        } : null);
+    };
+
     return (
-        <AuthContext.Provider value={{ firebaseUser, userProfile, loading, signIn, signUp, signOut, refreshProfile }}>
+        <AuthContext.Provider value={{ firebaseUser, userProfile, loading, signIn, signUp, signOut, refreshProfile, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

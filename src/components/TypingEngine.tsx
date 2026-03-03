@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { calculateWPM, calculateAccuracy } from '../utils/wpm';
 import { Timer, Zap, Target, RotateCcw } from 'lucide-react';
 import VisualKeyboard, { KEY_FINGER_MAP } from './VisualKeyboard';
-import FingerOverlay from './FingerOverlay';
+import HandDiagram from './HandDiagram';
 import { FingerType } from '../data/curriculum';
 import { FingerAccuracy } from '../types';
 
@@ -230,7 +230,11 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
                 {characters}
             </div>
 
-            <FingerOverlay targetFinger={targetFinger} />
+            <HandDiagram
+                targetFinger={targetFinger}
+                isLastCorrect={!isLastPressWrong && lastPressedKey !== ''}
+                isLastWrong={isLastPressWrong && lastPressedKey !== ''}
+            />
 
             <div className="w-full transition-opacity duration-300">
                 <VisualKeyboard
