@@ -21,7 +21,7 @@ service cloud.firestore {
 
     match /adminMessages/{messageId} {
       // Any authenticated user can read active messages, Admins can read all & write
-      allow read: if isAuthed();
+      allow read, list: if isAuthed();
       allow write: if isAuthed() && isAdmin();
     }
   }

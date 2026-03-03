@@ -11,15 +11,15 @@ interface VisualKeyboardProps {
 export const KEY_FINGER_MAP: Record<string, FingerType> = {
     // Upper Row
     'q': 'leftPinky', 'w': 'leftRing', 'e': 'leftMiddle', 'r': 'leftIndex', 't': 'leftIndex',
-    'y': 'rightIndex', 'u': 'rightIndex', 'ı': 'rightMiddle', 'i': 'rightMiddle', 'o': 'rightRing', 'p': 'rightPinky', 'ğ': 'rightPinky', 'ü': 'rightPinky',
+    'y': 'rightIndex', 'u': 'rightIndex', 'ı': 'rightMiddle', 'o': 'rightRing', 'p': 'rightPinky', 'ğ': 'rightPinky', 'ü': 'rightPinky',
 
     // Home Row
     'a': 'leftPinky', 's': 'leftRing', 'd': 'leftMiddle', 'f': 'leftIndex', 'g': 'leftIndex',
-    'h': 'rightIndex', 'j': 'rightIndex', 'k': 'rightMiddle', 'l': 'rightRing', 'ş': 'rightPinky', 'i̇': 'rightPinky',
+    'h': 'rightIndex', 'j': 'rightIndex', 'k': 'rightMiddle', 'l': 'rightRing', 'ş': 'rightPinky', 'i': 'rightPinky',
 
     // Lower Row
     'z': 'leftPinky', 'x': 'leftRing', 'c': 'leftMiddle', 'v': 'leftIndex', 'b': 'leftIndex',
-    'n': 'rightIndex', 'm': 'rightIndex', 'ö': 'rightRing', 'ç': 'rightPinky',
+    'n': 'rightIndex', 'm': 'rightIndex', 'ö': 'rightMiddle', 'ç': 'rightRing',
 
     ' ': 'thumbs'
 };
@@ -40,7 +40,7 @@ const FINGER_COLORS: Record<FingerType, string> = {
 
 const KEY_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'ı', 'o', 'p', 'ğ', 'ü'],
-    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ş', 'i̇'],
+    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ş', 'i'],
     ['z', 'x', 'c', 'v', 'b', 'n', 'm', 'ö', 'ç']
 ];
 

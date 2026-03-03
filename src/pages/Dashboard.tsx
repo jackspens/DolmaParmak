@@ -66,18 +66,23 @@ export default function Dashboard() {
                             {nextLvlConfig ? ` Bir sonraki seviye için bolca antrenman yap!` : ` En üst seviyedesin, efsane!`}
                         </p>
 
-                        {/* XP Bar */}
-                        <div className="mt-4 max-w-md">
-                            <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                                <span>XP İlerlemesi</span>
-                                <span className="text-neon-400">{formatNumber(userProfile.totalXP)} / {formatNumber(xpForNext)}</span>
-                            </div>
-                            <div className="h-2.5 bg-dark-900 rounded-full overflow-hidden border border-slate-700/50">
-                                <div
-                                    className="h-full bg-gradient-to-r from-neon-600 to-neon-400 rounded-full transition-all duration-1000 ease-out relative"
-                                    style={{ width: `${progressPercent}%` }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                        <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
+                            <Link to={`/typing/${userProfile.currentLessonId}`} className="btn-primary flex items-center gap-2 px-8 py-3 shadow-[0_0_20px_rgba(14,165,233,0.3)]">
+                                <Keyboard size={20} /> Hemen Eğitime Başla
+                            </Link>
+
+                            <div className="w-full md:max-w-md">
+                                <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                    <span>XP İlerlemesi</span>
+                                    <span className="text-neon-400">{formatNumber(userProfile.totalXP)} / {formatNumber(xpForNext)}</span>
+                                </div>
+                                <div className="h-2.5 bg-dark-900 rounded-full overflow-hidden border border-slate-700/50">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-neon-600 to-neon-400 rounded-full transition-all duration-1000 ease-out relative"
+                                        style={{ width: `${progressPercent}%` }}
+                                    >
+                                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -181,6 +186,8 @@ export default function Dashboard() {
                             const targetLessonId = firstIncompleteLessonId || phase.letters[0].lessons[0].id;
                             const isFullyCompleted = completedInPhase === totalPhaseLessons;
                             const isLocked = !isCurrentPhase && !isFullyCompleted && idx > 0 && !userProfile.completedLessons.includes(CURRICULUM[idx - 1].letters[CURRICULUM[idx - 1].letters.length - 1].lessons[9].id);
+
+                            console.log(`Phase ${idx} (${phase.id}): target=${targetLessonId}, locked=${isLocked}, isCurrent=${isCurrentPhase}`);
 
                             return (
                                 <Link
