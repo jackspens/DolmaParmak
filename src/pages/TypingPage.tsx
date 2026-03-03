@@ -68,11 +68,13 @@ export default function TypingPage() {
             setLastResults({ wpm, acc, fingerAcc: globalFingerAcc });
 
             // 2. Did they pass the strict requirements? (85% acc, 85% finger correctness)
+            // For Phase 1, we allow lower speed but strict accuracy
             const passed = acc >= 85 && globalFingerAcc >= 85;
             console.info('Pass Check:', passed);
 
             if (!passed) {
                 setShowFailed(true);
+                setSessionLoading(false);
                 return; // Do not save progression if failed
             }
 
@@ -215,21 +217,25 @@ export default function TypingPage() {
                 <div className="flex-1 flex flex-col items-center justify-center animate-fade-up">
                     <div className="glass max-w-md w-full p-8 text-center border-red-500/50 relative overflow-hidden">
                         <AlertCircle className="absolute top-4 right-4 text-red-500/20" size={100} />
-                        <h2 className="text-3xl font-black text-white mb-2 relative z-10">Biraz Daha Pratik</h2>
+                        <h2 className="text-3xl font-black text-white mb-2 relative z-10">Gelişim Lazım</h2>
                         <p className="text-slate-400 text-sm mb-6 relative z-10 text-balance">
-                            Dersi geçmek için doğruluğunun <strong className="text-white">%85</strong> üzerinde olması gerekiyor. Lütfen yavaşlayıp doğru parmakları kullandığından emin ol.
+                            Dersi geçmek için aşağıdaki kriterleri sağlamanız gerekiyor:
                         </p>
 
-                        <div className="flex justify-center gap-6 my-6 relative z-10 font-mono bg-dark-900/50 p-4 rounded-xl">
-                            <div>
-                                <div className="text-2xl text-red-400 font-bold">%{lastResults?.acc}</div>
-                                <div className="text-xs text-slate-500">İSABET</div>
+                        <div className="grid grid-cols-2 gap-4 my-6 relative z-10 font-mono bg-dark-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <div className={`p-3 rounded-lg border ${lastResults && lastResults.acc < 85 ? 'border-red-500/50 bg-red-500/5' : 'border-emerald-500/50 bg-emerald-500/5'}`}>
+                                <div className="text-2xl font-bold">%{lastResults?.acc}</div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-tighter">İSABET (Beklenen: %85)</div>
+                            </div>
+                            <div className={`p-3 rounded-lg border ${lastResults && lastResults.fingerAcc < 85 ? 'border-red-500/50 bg-red-500/5' : 'border-emerald-500/50 bg-emerald-500/5'}`}>
+                                <div className="text-2xl font-bold">%{lastResults?.fingerAcc}</div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-tighter">PARMAK (Beklenen: %85)</div>
                             </div>
                         </div>
 
                         <button
                             onClick={() => setShowFailed(false)}
-                            className="btn-secondary w-full text-lg relative z-10 border-red-500/30 hover:bg-red-500/10 text-red-200"
+                            className="btn-secondary w-full text-lg relative z-10 border-red-500/30 hover:bg-red-500/10 text-red-200 mt-4"
                         >
                             Tekrar Dene
                         </button>

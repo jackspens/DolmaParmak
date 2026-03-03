@@ -19,6 +19,7 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
     const [isActive, setIsActive] = useState(false);
     const [now, setNow] = useState<number>(Date.now());
     const inputRef = useRef<HTMLInputElement>(null);
+    const [progress, setProgress] = useState(0);
 
     // Finger tracking state
     const [fingerStats, setFingerStats] = useState<Partial<FingerAccuracy>>({});
@@ -77,11 +78,13 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
         if (val.length >= text.length) {
             val = val.slice(0, text.length);
             setInput(val);
+            setProgress(100);
             finishSession(val);
             return;
         }
 
         setInput(val);
+        setProgress(Math.round((val.length / text.length) * 100));
     };
 
     const finishSession = (finalInput: string) => {
@@ -167,6 +170,16 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
                 disabled={!!endTime}
             />
 
+            {/* Progress Bar */}
+            <div className="w-full max-w-4xl h-1.5 bg-dark-800 rounded-full mb-8 overflow-hidden border border-slate-700/50">
+                <div
+                    className="h-full bg-gradient-to-r from-neon-500 to-emerald-500 transition-all duration-300 relative"
+                    style={{ width: `${progress}%` }}
+                >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                </div>
+            </div>
+
             {/* Live Stats Bar */}
             <div className="flex w-full items-center justify-between mb-8 pb-4 border-b border-slate-700/50">
                 <div className="flex items-center gap-6">
@@ -187,13 +200,20 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
                     </div>
                 </div>
 
-                <button
-                    onClick={handleRestart}
-                    className="p-3 text-slate-400 hover:text-white hover:bg-dark-700 rounded-xl transition-colors custom-focus"
-                    title="Baştan Başla (Tab + Enter)"
-                >
-                    <RotateCcw size={20} />
-                </button>
+                <div className="flex items-center gap-4">
+                    {text[input.length] === ' ' && (
+                        <div className="animate-bounce bg-amber-500/20 text-amber-500 px-3 py-1 rounded-lg border border-amber-500/50 text-xs font-bold uppercase tracking-tight flex items-center gap-2">
+                            Boşluk Tuşuna Basın
+                        </div>
+                    )}
+                    <button
+                        onClick={handleRestart}
+                        className="p-3 text-slate-400 hover:text-white hover:bg-dark-700 rounded-xl transition-colors custom-focus"
+                        title="Baştan Başla (Tab + Enter)"
+                    >
+                        <RotateCcw size={20} />
+                    </button>
+                </div>
             </div>
 
             {/* Typing Canvas */}
@@ -212,22 +232,13 @@ export default function TypingEngine({ text, targetFinger = 'mixed', onComplete 
 
             <FingerOverlay targetFinger={targetFinger} />
 
-            <div className="w-full transition-opacity duration-300 hover:opacity-100 opacity-90">
+            <div className="w-full transition-opacity duration-300">
                 <VisualKeyboard
                     targetKey={text[input.length] || ''}
                     pressedKey={lastPressedKey}
                     isWrong={isLastPressWrong}
                 />
             </div>
-
-            {/* Completion Overlay */}
-            {endTime && (
-                <div className="mt-8 animate-fade-up glass p-6 border-neon-500/30 neon-glow w-full max-w-lg text-center">
-                    <h3 className="text-xl font-black text-white mb-2">Egzersiz Tamamlandı!</h3>
-                    <p className="text-slate-400 mb-6 font-medium">Sonuçların profilinize kaydedildi.</p>
-                    <button onClick={handleRestart} className="btn-primary w-full">Yeni Metinle Devam Et</button>
-                </div>
-            )}
         </div>
     );
 }
