@@ -52,7 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (snap.exists()) {
-            setUserProfile(snap.data() as UserProfile);
+            const data = snap.data();
+            // Merge existing data with defaults in case of missing fields (e.g. manually created users)
+            const fullProfile: UserProfile = {
+                currentLevel: 'A1',
+                bestWPM: 0,
+                bestAccuracy: 0,
+                totalXP: 0,
+                streakDays: 0,
+                badges: [],
+                readMessages: [],
+                levelStats: defaultLevelStats(),
+                ...(data as any)
+            };
+            setUserProfile(fullProfile);
         } else if (email) {
             // Auto-create missing profile if it doesn't exist
             const profile: Omit<UserProfile, 'uid'> = {
