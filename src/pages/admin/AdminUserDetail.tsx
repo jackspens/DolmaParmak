@@ -4,9 +4,9 @@ import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { UserProfile, LEVELS } from '../../types';
 import { tsToDate, formatNumber } from '../../utils/wpm';
-import { ArrowLeft, Medal, Zap, Target } from 'lucide-react';
+import { ArrowLeft, Medal, Zap, Target, Activity, Keyboard } from 'lucide-react';
 import {
-    LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+    ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip
 } from 'recharts';
 
 export default function AdminUserDetail() {
@@ -28,12 +28,18 @@ export default function AdminUserDetail() {
     if (loading) return <div className="text-slate-400">Yükleniyor...</div>;
     if (!user) return <div className="text-red-400">Kullanıcı bulunamadı.</div>;
 
-    // Chart data: WPM progression across levels
-    const chartData = LEVELS.map(l => ({
-        name: l,
-        wpm: user.levelStats?.[l]?.bestWPM || 0,
-        acc: user.levelStats?.[l]?.bestAccuracy || 0,
-    }));
+    // Chart data: Finger Accuracy
+    const fa = user.fingerAccuracy || {} as UserProfile['fingerAccuracy'];
+    const radarData = [
+        { subject: 'Sol Serçe', A: fa.leftPinky || 0 },
+        { subject: 'Sol Yüzük', A: fa.leftRing || 0 },
+        { subject: 'Sol Orta', A: fa.leftMiddle || 0 },
+        { subject: 'Sol İşaret', A: fa.leftIndex || 0 },
+        { subject: 'Sağ İşaret', A: fa.rightIndex || 0 },
+        { subject: 'Sağ Orta', A: fa.rightMiddle || 0 },
+        { subject: 'Sağ Yüzük', A: fa.rightRing || 0 },
+        { subject: 'Sağ Serçe', A: fa.rightPinky || 0 },
+    ];
 
     return (
         <div className="space-y-6">
@@ -71,22 +77,27 @@ export default function AdminUserDetail() {
                             %{user.bestAccuracy}
                         </div>
                     </div>
+                    <div className="stat-card">
+                        <div className="flex items-center gap-2 text-emerald-400 mb-2"><Keyboard size={18} /><span className="text-xs uppercase font-bold">Tamamlanan Ders</span></div>
+                        <div className="text-3xl font-black font-mono text-white">{user.completedLessons?.length || 0}</div>
+                    </div>
                 </div>
 
-                {/* WPM Chart Column */}
-                <div className="md:col-span-2 glass p-6">
-                    <h3 className="text-lg font-bold text-white mb-6">Seviyelere Göre Performans (En İyi)</h3>
-                    <div className="h-64">
+                {/* Radar Chart Column */}
+                <div className="md:col-span-2 glass p-6 flex flex-col items-center">
+                    <h3 className="text-lg font-bold text-white mb-2 self-start flex items-center gap-2">
+                        <Activity size={20} className="text-blue-400" />
+                        Kullanıcı Parmak Analizi
+                    </h3>
+                    <div className="w-full h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                                <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8' }} />
-                                <YAxis yAxisId="left" stroke="#10b981" tick={{ fill: '#10b981' }} />
-                                <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" tick={{ fill: '#3b82f6' }} domain={[0, 100]} />
-                                <Tooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
-                                <Line yAxisId="left" type="monotone" dataKey="wpm" name="WPM" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                <Line yAxisId="right" type="monotone" dataKey="acc" name="Kesinlik (%)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                            </LineChart>
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                                <PolarGrid stroke="#334155" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 10']} tick={false} axisLine={false} />
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#60a5fa' }} />
+                                <Radar name="Başarılı Vuruş" dataKey="A" stroke="#60a5fa" strokeWidth={2} fill="#60a5fa" fillOpacity={0.3} />
+                            </RadarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

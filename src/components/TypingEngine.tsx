@@ -1,19 +1,29 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { calculateWPM, calculateAccuracy } from '../utils/wpm';
 import { Timer, Zap, Target, RotateCcw } from 'lucide-react';
+import VisualKeyboard, { KEY_FINGER_MAP } from './VisualKeyboard';
+import FingerOverlay from './FingerOverlay';
+import { FingerType } from '../data/curriculum';
+import { FingerAccuracy } from '../types';
 
 interface TypingEngineProps {
     text: string;
-    onComplete: (wpm: number, accuracy: number, duration: number, correctChars: number, totalChars: number) => void;
+    targetFinger?: FingerType | 'mixed';
+    onComplete: (wpm: number, accuracy: number, duration: number, correctChars: number, totalChars: number, sessionFingerStats: Partial<FingerAccuracy>) => void;
 }
 
-export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
+export default function TypingEngine({ text, targetFinger = 'mixed', onComplete }: TypingEngineProps) {
     const [input, setInput] = useState('');
     const [startTime, setStartTime] = useState<number | null>(null);
     const [endTime, setEndTime] = useState<number | null>(null);
     const [isActive, setIsActive] = useState(false);
     const [now, setNow] = useState<number>(Date.now());
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Finger tracking state
+    const [fingerStats, setFingerStats] = useState<Partial<FingerAccuracy>>({});
+    const [lastPressedKey, setLastPressedKey] = useState('');
+    const [isLastPressWrong, setIsLastPressWrong] = useState(false);
 
     // Focus hidden input on click
     useEffect(() => {
@@ -41,6 +51,28 @@ export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
             setNow(Date.now());
         }
 
+        const currentIndex = val.length - 1;
+        const pressedChar = val[currentIndex];
+        const targetChar = text[currentIndex];
+
+        // Finger tracking logic
+        if (pressedChar) {
+            setLastPressedKey(pressedChar);
+            const isMatch = pressedChar === targetChar;
+            setIsLastPressWrong(!isMatch);
+
+            if (targetChar) {
+                const expectedFinger = KEY_FINGER_MAP[targetChar.toLowerCase()] || 'thumbs';
+                setFingerStats(prev => {
+                    const currentHits = prev[expectedFinger] || 0;
+                    // For now, tracking "correct hits" vs "wrong hits" conceptually. 
+                    // In a true system we'd track total attempts per finger to calc %.
+                    // Storing simply correct hits here, can be expanded later.
+                    return { ...prev, [expectedFinger]: isMatch ? currentHits + 1 : currentHits };
+                });
+            }
+        }
+
         // Stop if text complete
         if (val.length >= text.length) {
             val = val.slice(0, text.length);
@@ -66,7 +98,7 @@ export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
         const wpm = calculateWPM(correctChars, duration);
         const accuracy = calculateAccuracy(correctChars, finalInput.length);
 
-        onComplete(wpm, accuracy, duration, correctChars, finalInput.length);
+        onComplete(wpm, accuracy, duration, correctChars, finalInput.length, fingerStats);
     };
 
     const handleRestart = () => {
@@ -75,6 +107,9 @@ export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
         setEndTime(null);
         setIsActive(false);
         setNow(Date.now());
+        setLastPressedKey('');
+        setIsLastPressWrong(false);
+        setFingerStats({});
         inputRef.current?.focus();
     };
 
@@ -154,7 +189,7 @@ export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
             {/* Typing Canvas */}
             <div
                 onClick={() => inputRef.current?.focus()}
-                className="w-full max-w-4xl text-2xl md:text-4xl leading-relaxed md:leading-loose font-mono text-slate-500 tracking-wide cursor-text relative min-h-[200px]"
+                className="w-full max-w-4xl text-2xl md:text-3xl leading-relaxed font-mono text-slate-500 tracking-wide cursor-text relative min-h-[120px] mb-8"
                 style={{ wordSpacing: '0.2em' }}
             >
                 {!isActive && !endTime && (
@@ -163,6 +198,16 @@ export default function TypingEngine({ text, onComplete }: TypingEngineProps) {
                     </div>
                 )}
                 {characters}
+            </div>
+
+            <FingerOverlay targetFinger={targetFinger} />
+
+            <div className="w-full transition-opacity duration-300 hover:opacity-100 opacity-90">
+                <VisualKeyboard
+                    targetKey={text[input.length] || ''}
+                    pressedKey={lastPressedKey}
+                    isWrong={isLastPressWrong}
+                />
             </div>
 
             {/* Completion Overlay */}

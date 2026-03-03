@@ -2,16 +2,31 @@
 // DolmaParmak — TypeScript Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+export type Level = 'Phase 1' | 'Phase 2' | 'Phase 3' | 'Phase 4' | 'Phase 5' | 'Phase 6' | 'Phase 7' | 'Phase 8';
 
 export type UserRole = 'user' | 'admin';
+
+export interface FingerAccuracy {
+    leftPinky: number;
+    leftRing: number;
+    leftMiddle: number;
+    leftIndex: number;
+    rightIndex: number;
+    rightMiddle: number;
+    rightRing: number;
+    rightPinky: number;
+    thumbs: number;
+}
 
 export interface UserProfile {
     uid: string;
     email: string;
     displayName?: string;
     role: UserRole;
-    currentLevel: Level;
+    currentLevel: Level; // Kept for backwards compatibility / global ranking
+    currentLessonId: string; // Tracks exact progression in the curriculum
+    completedLessons: string[]; // Array of lesson IDs successfully completed (>85% acc & >85% finger)
+    fingerAccuracy: FingerAccuracy; // Tracks accuracy per finger across all time
     bestWPM: number;
     bestAccuracy: number;
     totalXP: number;
@@ -68,7 +83,7 @@ export type FirebaseTimestamp = {
 };
 
 // ─── Level Config ─────────────────────────────────────────────────────────────
-export const LEVELS: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+export const LEVELS: Level[] = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', 'Phase 6', 'Phase 7', 'Phase 8'];
 
 export const LEVEL_CONFIG: Record<Level, {
     label: string;
@@ -78,12 +93,14 @@ export const LEVEL_CONFIG: Record<Level, {
     xpReward: number;
     unlockWPM: number;
 }> = {
-    A1: { label: 'A1 — Başlangıç', description: 'Temel harf ve heceler', minWPM: 10, color: 'slate', xpReward: 100, unlockWPM: 0 },
-    A2: { label: 'A2 — Temel', description: 'Kısa cümleler', minWPM: 20, color: 'blue', xpReward: 150, unlockWPM: 10 },
-    B1: { label: 'B1 — Orta', description: 'Günlük paragraflar', minWPM: 35, color: 'violet', xpReward: 250, unlockWPM: 20 },
-    B2: { label: 'B2 — Orta Üstü', description: 'Uzun metinler', minWPM: 50, color: 'purple', xpReward: 400, unlockWPM: 35 },
-    C1: { label: 'C1 — İleri', description: 'Karmaşık içerik', minWPM: 70, color: 'amber', xpReward: 600, unlockWPM: 50 },
-    C2: { label: 'C2 — Uzman', description: 'Profesyonel yazma', minWPM: 90, color: 'neon', xpReward: 1000, unlockWPM: 70 },
+    'Phase 1': { label: 'Aşama 1', description: 'Ana Sıra (Home Row)', minWPM: 10, color: 'slate', xpReward: 100, unlockWPM: 0 },
+    'Phase 2': { label: 'Aşama 2', description: 'Üst Sıra', minWPM: 20, color: 'blue', xpReward: 150, unlockWPM: 0 },
+    'Phase 3': { label: 'Aşama 3', description: 'Alt Sıra', minWPM: 30, color: 'violet', xpReward: 250, unlockWPM: 0 },
+    'Phase 4': { label: 'Aşama 4', description: 'Özel Karakterler', minWPM: 40, color: 'purple', xpReward: 400, unlockWPM: 0 },
+    'Phase 5': { label: 'Aşama 5', description: 'Kelimeler', minWPM: 50, color: 'amber', xpReward: 600, unlockWPM: 0 },
+    'Phase 6': { label: 'Aşama 6', description: 'Cümleler', minWPM: 65, color: 'neon', xpReward: 800, unlockWPM: 0 },
+    'Phase 7': { label: 'Aşama 7', description: 'Paragraflar', minWPM: 80, color: 'emerald', xpReward: 1000, unlockWPM: 0 },
+    'Phase 8': { label: 'Aşama 8', description: 'Hız Ustalığı', minWPM: 100, color: 'rose', xpReward: 1500, unlockWPM: 0 },
 };
 
 export const BADGE_DEFINITIONS = [

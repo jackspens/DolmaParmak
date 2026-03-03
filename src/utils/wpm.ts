@@ -37,7 +37,7 @@ export function isLevelUnlocked(
     levelStats: Record<Level, LevelStat>
 ): boolean {
     const idx = LEVELS.indexOf(level);
-    if (idx === 0) return true;   // A1 always unlocked
+    if (idx === 0) return true;   // Phase 1 always unlocked
     const prev = LEVELS[idx - 1] as Level;
     const prevStat = levelStats[prev];
     return prevStat?.bestAccuracy >= 80;

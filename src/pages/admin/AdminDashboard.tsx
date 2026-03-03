@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
-import { UserProfile, LEVELS } from '../../types';
+import { UserProfile, LEVELS, FingerAccuracy } from '../../types';
 import { Users, TrendingUp, Target, Activity } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 export default function AdminDashboard() {
     const [users, setUsers] = useState<UserProfile[]>([]);
@@ -42,6 +42,32 @@ export default function AdminDashboard() {
         count: levelCounts[level],
     }));
 
+    // Global Finger Accuracy Calc
+    const globFinger: Record<keyof FingerAccuracy, number> = {
+        leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0,
+        rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0
+    };
+
+    users.forEach(u => {
+        if (u.fingerAccuracy) {
+            Object.keys(globFinger).forEach(k => {
+                const key = k as keyof FingerAccuracy;
+                globFinger[key] += (u.fingerAccuracy[key] || 0);
+            });
+        }
+    });
+
+    const radarData = [
+        { subject: 'Sol Serçe', A: globFinger.leftPinky },
+        { subject: 'Sol Yüzük', A: globFinger.leftRing },
+        { subject: 'Sol Orta', A: globFinger.leftMiddle },
+        { subject: 'Sol İşaret', A: globFinger.leftIndex },
+        { subject: 'Sağ İşaret', A: globFinger.rightIndex },
+        { subject: 'Sağ Orta', A: globFinger.rightMiddle },
+        { subject: 'Sağ Yüzük', A: globFinger.rightRing },
+        { subject: 'Sağ Serçe', A: globFinger.rightPinky },
+    ];
+
     const colors = ['#334155', '#1e3a8a', '#4c1d95', '#7e22ce', '#b45309', '#059669'];
 
     return (
@@ -67,21 +93,38 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="glass p-6">
-                <h3 className="text-lg font-bold text-white mb-6">Seviyelere Göre Dağılım</h3>
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                            <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8' }} />
-                            <YAxis stroke="#64748b" tick={{ fill: '#94a3b8' }} allowDecimals={false} />
-                            <Tooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} />
-                            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="glass p-6">
+                    <h3 className="text-lg font-bold text-white mb-6">Seviyelere Göre Dağılım</h3>
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                                <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8' }} />
+                                <YAxis stroke="#64748b" tick={{ fill: '#94a3b8' }} allowDecimals={false} />
+                                <Tooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} />
+                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                <div className="glass p-6">
+                    <h3 className="text-lg font-bold text-white mb-6">Global Parmak İsabet Haritası</h3>
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                                <PolarGrid stroke="#334155" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 10']} tick={false} axisLine={false} />
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#ec4899' }} />
+                                <Radar name="Toplam Başarılı Vuruş" dataKey="A" stroke="#ec4899" strokeWidth={2} fill="#ec4899" fillOpacity={0.3} />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
         </div>

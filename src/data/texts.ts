@@ -12,7 +12,7 @@ export type TextEntry = {
 
 const texts: Record<Level, TextEntry[]> = {
 
-    A1: [
+    "Phase 1": [
         {
             id: 'a1-1',
             text: 'ali okula gider. biz eve gelir. sen ne yaparsın. o kedi sever. bu ev büyük. masa beyaz. kedi uyur. gün güzel. biz mutluyuz. sen de gel.',
@@ -35,7 +35,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
     ],
 
-    A2: [
+    "Phase 2": [
         {
             id: 'a2-1',
             text: 'Her sabah saat yedide uyanırım. Kahvaltı yapar ve işe giderim. Ofiste çalışmak bazen zorlu olsa da arkadaşlarım sayesinde güzel vakit geçiririm.',
@@ -58,7 +58,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
     ],
 
-    B1: [
+    "Phase 3": [
         {
             id: 'b1-1',
             text: 'Teknoloji, günümüzde hayatımızın ayrılmaz bir parçası haline gelmiştir. Akıllı telefonlar, tabletler ve bilgisayarlar iletişimi kolaylaştırırken bizi daha verimli yapmaktadır. Ancak teknolojiye olan bağımlılık bazı sorunlara yol açabilmektedir.',
@@ -81,7 +81,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
     ],
 
-    B2: [
+    "Phase 4": [
         {
             id: 'b2-1',
             text: 'Yapay zeka teknolojisinin gelişimi, hem büyük fırsatlar hem de ciddi etik sorular beraberinde getirmektedir. Derin öğrenme algoritmaları, özellikle dil modelleri, insan düzeyinde performans sergilemeye başlamıştır. Bu durum iş dünyasından sağlığa kadar pek çok alanda köklü dönüşümlere neden olmaktadır.',
@@ -104,7 +104,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
     ],
 
-    C1: [
+    "Phase 5": [
         {
             id: 'c1-1',
             text: 'Epistemoloji, bilginin doğasını, kaynağını ve sınırlarını sorgulayan felsefi bir disiplindir. Tümevarımsal akıl yürütmenin güvenilirliği, algının gerçekliği ne ölçüde yansıttığı ve doğrulanmış inanç ile bilgi arasındaki ayrım, bu alanın temel tartışma konuları arasında yer almaktadır.',
@@ -127,7 +127,7 @@ const texts: Record<Level, TextEntry[]> = {
         },
     ],
 
-    C2: [
+    "Phase 6": [
         {
             id: 'c2-1',
             text: 'Postmodern edebiyat kuramı, metnin anlamının yazarın niyet düzeyinde tüketilmediğini, aksine okuyucunun yorumsal müdahalesiyle her defasında yeniden inşa edildiğini ileri sürmektedir. Roland Barthes\'ın "yazarın ölümü" tezi, özne merkezli anlamlandırma paradigmasını kökten sarsan bir epistemik kırılmayı simgelemektedir.',
@@ -149,6 +149,8 @@ const texts: Record<Level, TextEntry[]> = {
             text: 'Analitik felsefenin dil-anlam ilişkisine yönelik soruşturmaları, Wittgenstein\'ın geç dönem düşüncesinde somutlaşan "anlam kullanımdır" tezinin bir uzantısı olarak değerlendirilebilir.Sözdizimsel yapıların anlambilimsel içeriklerle eşleştirilme biçimi, doğal dil işleme sistemleri için de temel bir modelleme güçlüğü teşkil etmekte; bu durum hesaplamalı dilbilim ile felsefi semantiğin kesişim noktasını giderek daha stratejik bir zemine taşımaktadır.',
         },
     ],
+    "Phase 7": [{ id: "p7", text: "Phase 7 practice text." }],
+    "Phase 8": [{ id: "p8", text: "Phase 8 practice text. Final challenge." }]
 };
 
 export function getTextsForLevel(level: Level): TextEntry[] {

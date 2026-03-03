@@ -55,7 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = snap.data();
             // Merge existing data with defaults in case of missing fields (e.g. manually created users)
             const fullProfile: UserProfile = {
-                currentLevel: 'A1',
+                currentLevel: 'Phase 1',
+                currentLessonId: 'phase1-f-1',
+                completedLessons: [],
+                fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
                 bestWPM: 0,
                 bestAccuracy: 0,
                 totalXP: 0,
@@ -71,7 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const profile: Omit<UserProfile, 'uid'> = {
                 email,
                 role: 'user',
-                currentLevel: 'A1',
+                currentLevel: 'Phase 1',
+                currentLessonId: 'phase1-f-1',
+                completedLessons: [],
+                fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
                 bestWPM: 0,
                 bestAccuracy: 0,
                 totalXP: 0,
@@ -120,7 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile: Omit<UserProfile, 'uid'> = {
             email,
             role: 'user',
-            currentLevel: 'A1',
+            currentLevel: 'Phase 1',
+            currentLessonId: 'phase1-f-1',
+            completedLessons: [],
+            fingerAccuracy: { leftPinky: 0, leftRing: 0, leftMiddle: 0, leftIndex: 0, rightIndex: 0, rightMiddle: 0, rightRing: 0, rightPinky: 0, thumbs: 0 },
             bestWPM: 0,
             bestAccuracy: 0,
             totalXP: 0,
