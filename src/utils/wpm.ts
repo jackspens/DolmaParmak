@@ -26,9 +26,11 @@ export function calculateXP(
     accuracy: number,
     targetWPM: number
 ): number {
-    const wpmBonus = Math.min(2, wpm / targetWPM);          // up to 2x for speed
+    const safeTarget = targetWPM || 15; // Fallback to 15 WPM if target is 0 or missing
+    const wpmBonus = Math.max(0.5, Math.min(2, wpm / safeTarget)); // Min 0.5x, max 2x bonus
     const accBonus = accuracy >= 100 ? 1.5 : accuracy >= 95 ? 1.2 : 1.0;
-    return Math.round(baseXP * wpmBonus * accBonus);
+    const result = Math.round(baseXP * wpmBonus * accBonus);
+    return isNaN(result) ? baseXP : result;
 }
 
 // Check if a level is unlocked based on previous level's best WPM

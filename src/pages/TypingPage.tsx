@@ -20,6 +20,8 @@ export default function TypingPage() {
 
     const [sessionLoading, setSessionLoading] = useState(false);
 
+    const [showGuide, setShowGuide] = useState(false);
+
     // Result states
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [showFailed, setShowFailed] = useState(false);
@@ -53,23 +55,21 @@ export default function TypingPage() {
 
     const handleComplete = async (wpm: number, acc: number, duration: number, correctChars: number, totalChars: number, sessionFingerStats: Partial<FingerAccuracy>) => {
         setSessionLoading(true);
+        console.info('Lesson Completed:', { wpm, acc, totalChars });
         try {
             // 1. Calculate Finger Accuracy % for this specific lesson
             let correctFingerHits = 0;
-            // The typing engine currently tracks hits mapped to the *target key's mapped finger*.
-            // We sum those up as "correct finger usages" simply matching the key success for now.
-            // A more advanced physical hardware hook would be needed to actually know *which* finger they used,
-            // so we approximate: if they hit the target key, we assume they used the correct finger.
-            // However, the tracking logic separates it by finger bucket, allowing us to build the radar chart later.
             Object.values(sessionFingerStats).forEach(v => correctFingerHits += (v || 0));
 
             // Calculate finger accuracy relative to total chars in lesson
             const globalFingerAcc = totalChars > 0 ? Math.round((correctFingerHits / totalChars) * 100) : 0;
+            console.info('Finger Stats:', { sessionFingerStats, correctFingerHits, globalFingerAcc });
 
             setLastResults({ wpm, acc, fingerAcc: globalFingerAcc });
 
             // 2. Did they pass the strict requirements? (85% acc, 85% finger correctness)
             const passed = acc >= 85 && globalFingerAcc >= 85;
+            console.info('Pass Check:', passed);
 
             if (!passed) {
                 setShowFailed(true);
@@ -82,11 +82,12 @@ export default function TypingPage() {
             const isEndOfPhase = nextLesson && nextLesson.id.split('-')[0] !== currentLesson.id.split('-')[0];
 
             // Calc XP
-            const earnedXP = calculateXP(isEndOfPhase ? 100 : 20, wpm, acc, 0); // 20 per letter, 100 per phase
-            const newTotalXP = userProfile.totalXP + earnedXP;
+            const earnedXP = calculateXP(isEndOfPhase ? 100 : 20, wpm, acc, 15);
+            const newTotalXP = (userProfile.totalXP || 0) + earnedXP;
+            console.info('XP Gain:', { earnedXP, newTotalXP });
 
             // Merge global Finger Accuracy
-            const newFingerAcc = { ...userProfile.fingerAccuracy };
+            const newFingerAcc = { ...(userProfile.fingerAccuracy || {}) };
             for (const [f, hits] of Object.entries(sessionFingerStats)) {
                 const fKey = f as keyof FingerAccuracy;
                 newFingerAcc[fKey] = (newFingerAcc[fKey] || 0) + (hits as number);
@@ -94,7 +95,7 @@ export default function TypingPage() {
 
             // Badges
             const newBadges: any[] = [];
-            const earnedIds = userProfile.badges.map(b => b.id);
+            const earnedIds = userProfile.badges?.map(b => b.id) || [];
             const checkBadge = (id: string, condition: boolean) => {
                 if (condition && !earnedIds.includes(id)) {
                     const bd = BADGE_DEFINITIONS.find(b => b.id === id);
@@ -102,13 +103,13 @@ export default function TypingPage() {
                 }
             };
 
-            const globalBestWPM = Math.max(userProfile.bestWPM, wpm);
+            const globalBestWPM = Math.max(userProfile.bestWPM || 0, wpm);
             checkBadge('first_session', true);
             checkBadge('accuracy_100', acc === 100);
 
             const updates: any = {
                 bestWPM: globalBestWPM,
-                bestAccuracy: Math.max(userProfile.bestAccuracy, acc),
+                bestAccuracy: Math.max(userProfile.bestAccuracy || 0, acc),
                 totalXP: newTotalXP,
                 fingerAccuracy: newFingerAcc,
                 completedLessons: arrayUnion(currentLesson.id)
@@ -123,6 +124,7 @@ export default function TypingPage() {
                 updates.badges = arrayUnion(...newBadges);
             }
 
+            console.info('Updating Firestore with:', updates);
             await updateDoc(doc(db, 'users', userProfile.uid), updates);
             await refreshProfile();
 
@@ -144,11 +146,34 @@ export default function TypingPage() {
                 </button>
 
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setShowGuide(!showGuide)}
+                        className={`px-4 py-1.5 rounded-full border-2 text-sm font-bold flex items-center gap-2 transition-all ${showGuide ? 'bg-amber-500/10 border-amber-500 text-amber-500' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                    >
+                        <AlertCircle size={16} /> Parmak Yerleşimi
+                    </button>
                     <div className={clsx(`px-4 py-1.5 rounded-full border-2 text-sm font-bold flex items-center gap-2 border-neon-500 text-neon-400 bg-neon-500/10`)}>
                         <Keyboard size={16} /> {currentLesson.title}
                     </div>
                 </div>
             </div>
+
+            {/* Hand Placement Guide Overlay */}
+            {showGuide && (
+                <div className="animate-fade-in absolute inset-0 z-40 flex items-center justify-center p-8 bg-dark-950/90 backdrop-blur-md">
+                    <div className="glass max-w-4xl w-full p-6 relative border-amber-500/30 neon-glow">
+                        <button onClick={() => setShowGuide(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                            <ArrowLeft size={24} /> Kapat
+                        </button>
+                        <h2 className="text-2xl font-black text-white mb-4 text-center">Türkçe Q Klavye Parmak Dizilimi</h2>
+                        <img src="/DolmaParmak/guide-hands.png" alt="Hand Placement Guide" className="w-full h-auto rounded-xl shadow-2xl border border-slate-700/50" />
+                        <p className="mt-6 text-slate-400 text-center text-sm">
+                            Her parmak kendine ait renkteki tuş grubundan sorumludur.
+                            <br />Elleriniz <strong>A S D F</strong> ve <strong>J K L Ş</strong> tuşları üzerinde (Home Row) dinlenmelidir.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Pedagogical Instruction */}
             <div className="text-center mb-6 max-w-2xl mx-auto">
